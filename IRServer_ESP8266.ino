@@ -78,6 +78,8 @@ const char* MQTT_PW = AIO_KEY;
 long lastMsg = 0;
 char msg[50];
 int value = 0;
+const unsigned long TIMER_EXP = 60000;
+unsigned long previousTime = 0;
 
 
 
@@ -648,13 +650,22 @@ void reconnect() {
 
 void loop(void) {
   server.handleClient();
-
+  // OTA Loop
+  ArduinoOTA.handle();
+  
   if (!client.connected()) {
         reconnect();
     }
     // MQTT Loop
     client.loop();
+    delay(100);
 
-    // OTA Loop
-    ArduinoOTA.handle();
+      /* Updates frequently */
+    unsigned long uCurrentTime = millis();
+    // MQTT State
+    if(uCurrentTime - previousTime > TIMER_EXP){
+      client.publish(MQTT_STATETOPIC,"true");
+      /* Update the timing for the next time around */
+      previousTime = uCurrentTime;
+    }
 }
